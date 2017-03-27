@@ -7,6 +7,8 @@ library(dplyr)
 library(purrr)
 library(caret)
 library(doMC)
+library(tidytext)
+library(stringr)
 library(tm)
 
 # SOURCE FILES ----
@@ -80,6 +82,28 @@ users_ovr <- users %>%
     oneVsRest = map(data, createOneVsRest, uname, users)
   )
 
+user_tokens <- users %>% 
+  unnest_tokens(word, text, token = stringr::str_split, pattern = " ") %>% 
+  group_by(uname, file_id) %>%
+  mutate(
+    new_lines = cumsum(str_count(word, "\\\\n")),
+    special_characters = cumsum(str_count(word, "[!\\:\\?]")),
+    underscores = cumsum(str_count(word, "_"))
+    #TODO- emojis
+    
+  ) %>% ungroup()
+
+user_tokens.agg <- user_tokens %>% 
+  group_by(uname) %>% 
+  summarise(
+    avg_newlines = mean(new_lines),
+    avg_special_chars = mean(special_characters),
+    avg_underscores = mean(underscores)
+  )
+
+users <- users %>% 
+  inner_join(user_tokens.agg)
+
 users_ovr %>% 
   mutate(knn_mdl = map(oneVsRest, knn_model))
 
@@ -88,4 +112,4 @@ users$uname <- NULL
 
 stop_words <- read_lines("data/stopwords.txt")
 
-knn_model(users, stop_words)
+pred <- knn_model(users, stop_words)

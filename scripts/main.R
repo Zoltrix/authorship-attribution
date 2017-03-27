@@ -32,8 +32,10 @@ createOneVsRest <- function(df, name, original_df) {
 }
 
 
-knn_model <- function(df) {
+knn_model <- function(df, stop_words) {
   corpus <- VCorpus(VectorSource(df$text))
+  
+  corpus <- tm_map(corpus, removeWords, stop_words) 
   
   tdm <- DocumentTermMatrix(corpus, control = list(removePunctuation = TRUE, 
                                          #stopwords = TRUE, 
@@ -42,11 +44,11 @@ knn_model <- function(df) {
                                          weighting = weightTfIdf,
                                          bounds = list(global = c(5, Inf))))
   
-  # BigramTokenizer <-
-  #   function(x)
-  #     unlist(lapply(ngrams(words(x), 2), paste, collapse = " "), use.names = FALSE)
-  library(RWeka)
-  BigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
+  BigramTokenizer <-
+    function(x)
+      unlist(lapply(ngrams(words(x), 2), paste, collapse = " "), use.names = FALSE)
+  #library(RWeka)
+  #BigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min = 2, max = 2))
   
   bigrams_tdm <- DocumentTermMatrix(corpus, control = list(tokenize = BigramTokenizer, 
                                                    removeNumbers = TRUE, 
@@ -84,4 +86,6 @@ users_ovr %>%
 users$y <- users$uname
 users$uname <- NULL
 
-knn_model(users)
+stop_words <- read_lines("data/stopwords.txt")
+
+knn_model(users, stop_words)

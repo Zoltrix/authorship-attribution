@@ -21,6 +21,7 @@ source("scripts/split_data.R")
 source("scripts/process.R")
 source("scripts/textual_features.R")
 
+# SET SEED ----
 #set the main seed
 set.seed(12345)
 
@@ -29,7 +30,7 @@ seeds <- vector(mode = "list", length = 4)
 for(i in 1:3) seeds[[i]]<- sample.int(n=1000, 1)
 seeds[[4]]<-sample.int(1000, 1)
 
-
+# MODEL TRAINING ----
 train_model <- function(df, seeds, method) {
   train_control<- trainControl(method="cv", seeds = seeds, number=3, savePredictions = TRUE)
   fit <- train(y ~ ., data = df, trControl = train_control, method = method)
@@ -48,7 +49,13 @@ model_performance <- function(fit) {
 users <- read_data("data/sample/users/")
 stop_words <- read_lines("data/stopwords.txt")
 
-users_with_textual_features <- add_textual_features(users)
+# DATA SPLIT ----
+data_split <- split_data(users)
+trData <- data_split$training
+tstData <- data_split$testing
+
+
+users_with_textual_features <- add_textual_features(trData)
 preprocess <- process_data(users_with_textual_features, stop_words)
 
 registerDoMC(cores = 4)

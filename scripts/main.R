@@ -19,41 +19,29 @@ library(tm)
 source("scripts/read_data.R")
 source("scripts/split_data.R")
 source("scripts/process.R")
+source("scripts/textual_features.R")
 
-users <- read_data("data/sample/users/")
+#set the main seed
+set.seed(123)
 
-train_model <- function(df, method) {
-  train_control<- trainControl(method="cv", number=3, savePredictions = TRUE)
+#set seeds to be used by model training
+seeds <- vector(mode = "list", length = 4)
+for(i in 1:3) seeds[[i]]<- sample.int(n=1000, 1)
+seeds[[4]]<-sample.int(1000, 1)
+
+
+train_model <- function(df, seeds, method) {
+  train_control<- trainControl(method="cv", seeds = seeds, index = createFolds(df$y, k = 3), number=3, savePredictions = TRUE)
   mdl <- train(y ~ ., data = df, trControl = train_control, method = method)
   
   mdl$pred
 }
 
-user_tokens <- users %>% 
-  unnest_tokens(word, text, token = stringr::str_split, pattern = " ") %>% 
-  group_by(uname, file_id) %>%
-  mutate(
-    new_lines = str_count(word, "\\\\n"),
-    special_characters = str_count(word, "[!\\:\\?]"),
-    underscores = str_count(word, "_")
-    #TODO- emojis
-    
-  ) %>% ungroup()
-
-user_tokens.agg <- user_tokens %>% 
-  group_by(uname, file_id) %>% 
-  summarise(
-    newlines = sum(new_lines),
-    special_chars = sum(special_characters),
-    underscores = sum(underscores)
-  )
-
-users <- users %>% 
-  inner_join(user_tokens.agg)
-
+users <- read_data("data/sample/users/")
 stop_words <- read_lines("data/stopwords.txt")
 
-registerDoMC(cores = 4)
-preprcess <- process_data(users, stop_words)
+users_with_textual_features <- add_textual_features(users)
+preprocess <- process_data(users_with_textual_features, stop_words)
 
-pred <- train_model(preprcess$processed_df, 'svmLinear')
+registerDoMC(cores = 4)
+pred <- train_model(preprocess$processed_df, 'svmLinear')

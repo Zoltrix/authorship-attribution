@@ -5,7 +5,8 @@ add_textual_features <- function(users) {
     mutate(
       new_lines = str_count(word, "\\\\n"),
       special_characters = str_count(word, "[!\\:\\?]"),
-      underscores = str_count(word, "_")
+      underscores = str_count(word, "_"),
+      n_chars = nchar(word)
       #TODO- emojis
       
     ) %>% ungroup()
@@ -15,7 +16,8 @@ add_textual_features <- function(users) {
     summarise(
       newlines = sum(new_lines),
       special_chars = sum(special_characters),
-      underscores = sum(underscores)
+      underscores = sum(underscores),
+      n_chars = sum(n_chars)
     )
   
   users %>% 

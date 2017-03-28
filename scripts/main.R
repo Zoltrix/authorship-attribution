@@ -1,9 +1,12 @@
 setwd("Projects/authorship-attribution/")
 
+
 ## 1) Continue with investigating the distribution of the newly added features
 ## we might need to scale them according to the algorithm
 
 ## 2) Do not use aggregation ... use per document calculations instead
+
+## 3) Try Stemming
 # LIBRARIES ----
 library(readr)
 library(tidyr)

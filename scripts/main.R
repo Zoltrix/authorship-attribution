@@ -21,25 +21,7 @@ source("scripts/read_data.R")
 
 users <- read_data("data/sample/users/")
 
-createOneVsRest <- function(df, name, original_df) {
-  name <- name[1]
-  rest <- original_df %>% 
-    filter(uname != name)
-  
-  rest_all <- do.call("rbind", lapply(unique(rest$uname), function(usr){
-    d <- rest[rest$uname == usr, ]
-    d %>% 
-      sample_n( min(nrow(d), nrow(df)) )
-  }))
-  
-  df$y <- 1
-  rest_all$y <- 0
-  
-  bind_rows(df, rest_all)
-}
-
-
-knn_model <- function(df, stop_words) {
+train_model <- function(df, stop_words, method) {
   corpus <- VCorpus(VectorSource(df$text))
   
   corpus <- tm_map(corpus, removeWords, stop_words) 
@@ -75,17 +57,10 @@ knn_model <- function(df, stop_words) {
   registerDoMC(cores = 4)
   
   train_control<- trainControl(method="cv", number=3, savePredictions = TRUE)
-  mdl <- train(y ~ ., data = train, trControl = train_control, method = 'svmLinear')
+  mdl <- train(y ~ ., data = train, trControl = train_control, method = method)
   
   mdl$pred
 }
-
-users_ovr <- users %>% 
-  group_by(uname) %>% 
-  nest() %>% 
-  mutate(
-    oneVsRest = map(data, createOneVsRest, uname, users)
-  )
 
 user_tokens <- users %>% 
   unnest_tokens(word, text, token = stringr::str_split, pattern = " ") %>% 
@@ -109,12 +84,9 @@ user_tokens.agg <- user_tokens %>%
 users <- users %>% 
   inner_join(user_tokens.agg)
 
-users_ovr %>% 
-  mutate(knn_mdl = map(oneVsRest, knn_model))
-
 users$y <- users$uname
 users$uname <- NULL
 
 stop_words <- read_lines("data/stopwords.txt")
 
-pred <- knn_model(users, stop_words)
+pred <- train_model(users, stop_words, 'svmLinear')

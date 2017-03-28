@@ -1,11 +1,13 @@
 add_textual_features <- function(users) {
+  
+  special_characters <- "~, $, %, ^, &, *, -, _, = ,+, >, <, [, ], {, }, \\/, \\, |"
+  
   user_tokens <- users %>% 
     unnest_tokens(word, text, token = stringr::str_split, pattern = " ", drop = FALSE) %>% 
     group_by(uname, file_id, text) %>%
     mutate(
       new_lines = str_count(word, "\\\\n"),
-      special_characters = str_count(word, "[!\\:\\?]"),
-      underscores = str_count(word, "_"),
+      special_characters = str_count(word, "[\\~\\$\\%\\^\\&\\*\\-_=\\+\\>\\<\\[\\]\\{\\}\\/\\\\\\|]") - new_lines,
       n_chars = nchar(word),
       n_spaces = str_count(text, " ")
       #TODO- emojis
@@ -17,9 +19,9 @@ add_textual_features <- function(users) {
     summarise(
       newlines = sum(new_lines),
       special_chars = sum(special_characters),
-      underscores = sum(underscores),
       n_spaces = last(n_spaces), 
-      n_chars = sum(n_chars) + n_spaces
+      n_chars = sum(n_chars) + n_spaces,
+      n_words = n()
     )
   
   users %>% 

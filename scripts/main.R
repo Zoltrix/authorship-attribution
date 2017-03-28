@@ -22,7 +22,7 @@ source("scripts/process.R")
 source("scripts/textual_features.R")
 
 #set the main seed
-set.seed(123)
+set.seed(12345)
 
 #set seeds to be used by model training
 seeds <- vector(mode = "list", length = 4)
@@ -31,7 +31,7 @@ seeds[[4]]<-sample.int(1000, 1)
 
 
 train_model <- function(df, seeds, method) {
-  train_control<- trainControl(method="cv", seeds = seeds, index = createFolds(df$y, k = 3), number=3, savePredictions = TRUE)
+  train_control<- trainControl(method="cv", seeds = seeds, number=3, savePredictions = TRUE)
   mdl <- train(y ~ ., data = df, trControl = train_control, method = method)
   
   mdl$pred
@@ -44,4 +44,4 @@ users_with_textual_features <- add_textual_features(users)
 preprocess <- process_data(users_with_textual_features, stop_words)
 
 registerDoMC(cores = 4)
-pred <- train_model(preprocess$processed_df, 'svmLinear')
+pred <- train_model(preprocess$processed_df, seeds, 'svmLinear')

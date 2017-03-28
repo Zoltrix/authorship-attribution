@@ -9,7 +9,8 @@ add_textual_features <- function(users) {
       new_lines = str_count(word, "\\\\n"),
       special_characters = str_count(word, "[\\~\\$\\%\\^\\&\\*\\-_=\\+\\>\\<\\[\\]\\{\\}\\/\\\\\\|]") - new_lines,
       n_chars = nchar(word),
-      n_spaces = str_count(text, " ")
+      n_spaces = str_count(text, " "),
+      n_numbers = str_count(word, "[\u0660-\u06690-9]")
       #TODO- emojis
       
     ) %>% ungroup()
@@ -21,6 +22,7 @@ add_textual_features <- function(users) {
       special_chars = sum(special_characters),
       n_spaces = last(n_spaces), 
       n_chars = sum(n_chars) + n_spaces,
+      n_numbers = sum(n_numbers),
       n_words = n()
     )
   

@@ -32,10 +32,18 @@ seeds[[4]]<-sample.int(1000, 1)
 
 train_model <- function(df, seeds, method) {
   train_control<- trainControl(method="cv", seeds = seeds, number=3, savePredictions = TRUE)
-  mdl <- train(y ~ ., data = df, trControl = train_control, method = method)
+  fit <- train(y ~ ., data = df, trControl = train_control, method = method)
   
-  mdl$pred
+  fit
 }
+
+model_performance <- function(fit) {
+  confustion_mtrx <- confusionMatrix(data = mdl$pred$pred, reference = mdl$pred$obs, mode = "prec_recall")
+
+  cat("Accuracy: ", confustion_mtrx$overall["Accuracy"], "\n")
+  cat("Precision: ", mean(confustion_mtrx$byClass[, "Precision"]), "\n")
+  cat("Recall: ", mean(confustion_mtrx$byClass[, "Recall"]), "\n")
+} 
 
 users <- read_data("data/sample/users/")
 stop_words <- read_lines("data/stopwords.txt")
@@ -44,4 +52,6 @@ users_with_textual_features <- add_textual_features(users)
 preprocess <- process_data(users_with_textual_features, stop_words)
 
 registerDoMC(cores = 4)
-pred <- train_model(preprocess$processed_df, seeds, 'svmLinear')
+mdl <- train_model(preprocess$processed_df, seeds, 'svmLinear')
+
+model_performance(mdl)
